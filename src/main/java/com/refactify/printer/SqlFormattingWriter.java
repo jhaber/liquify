@@ -75,7 +75,7 @@ public class SqlFormattingWriter extends Writer {
 
     formatted.append(')');
     // force a space after the close paren
-    if (unformatted.charAt(closeParen + 1) != ' ') {
+    if (unformatted.charAt(closeParen + 1) != ' ' && unformatted.charAt(closeParen + 1) != ';') {
       formatted.append(' ');
     }
     formatted.append(unformatted.substring(closeParen + 1));

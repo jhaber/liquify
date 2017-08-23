@@ -46,7 +46,7 @@ public class Liquify {
             String targetFileName = targetFileNameBuilder.buildFilename(conversionArguments);
 
             if (!conversionArguments.getOverwrite() && new File(targetFileName).exists()) {
-                System.out.println("Target file " + targetFileName + " already exists, pass '--overwrite' to allow overwriting");
+                System.out.println("Target file " + targetFileName + " already exists, remove the existing file or pass '--overwrite' to allow overwriting");
                 System.exit(1);
             }
 
@@ -71,7 +71,7 @@ public class Liquify {
         ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(conversionArguments.getSource(), resourceAccessor);
         DatabaseChangeLog changeLog = parser.parse(conversionArguments.getSource(), new ChangeLogParameters(), resourceAccessor);
 
-        if (changeLog.getObjectQuotingStrategy() != null) {
+        if (changeLog.getObjectQuotingStrategy() != null && changeLog.getObjectQuotingStrategy() != ObjectQuotingStrategy.LEGACY) {
             System.out.println("XML changelog has a top-level quoting strategy set, this isn't supported by SQL changelog");
             System.exit(1);
         }
