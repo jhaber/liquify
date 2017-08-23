@@ -136,6 +136,14 @@ public class Liquify {
             parts.add("runInTransaction:false");
         }
 
+        if (changeSet.getCreated() != null) {
+            parts.add("created:" + changeSet.getCreated());
+        }
+
+        if (changeSet.getRunOrder() != null) {
+            parts.add("runOrder:" + changeSet.getRunOrder());
+        }
+
         return join(parts, " ") + "\n";
     }
 
