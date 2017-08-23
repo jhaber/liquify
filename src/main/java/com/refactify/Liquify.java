@@ -40,8 +40,6 @@ public class Liquify {
     private final static TargetFileNameBuilder targetFileNameBuilder = new TargetFileNameBuilder();
 
     public static void main(final String[] args) {
-        //ChangeLogSerializerFactory.getInstance().register(new FormattedSqlChangeLogSerializer());
-
         ConversionArguments conversionArguments = parser.parseArguments(args);
         if(conversionArguments.areValid()) {
             String targetFileName = targetFileNameBuilder.buildFilename(conversionArguments);
