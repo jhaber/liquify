@@ -16,6 +16,9 @@ public class ConversionArgumentsParser {
                     String value = arguments[++i];
                     conversionArguments.setDatabase(value);
                 }
+                else if (argument.equals("-overwrite") || argument.equals("--overwrite")) {
+                    conversionArguments.setOverwrite(true);
+                }
             }
         }
         catch (ArrayIndexOutOfBoundsException exc) {

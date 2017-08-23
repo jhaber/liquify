@@ -4,6 +4,7 @@ public class ConversionArguments {
     private String source;
     private ConversionType type;
     private String database;
+    private boolean overwrite;
     private static final String[] validFileExtensions = new String[] {".xml", ".yaml", ".json", ".sql"};
     private static final String[] validDatabases =
             new String[] {"db2", "derby", "firebird", "h2", "hsql", "informix", "mssql", "mariadb", "mysql", "oracle",
@@ -31,6 +32,14 @@ public class ConversionArguments {
 
     public void setDatabase(final String database) {
         this.database = database;
+    }
+
+    public boolean getOverwrite() {
+        return overwrite;
+    }
+
+    public void setOverwrite(boolean overwrite) {
+        this.overwrite = overwrite;
     }
 
     public boolean areValid() {
@@ -117,6 +126,7 @@ public class ConversionArguments {
         sb.append("source='").append(source).append('\'');
         sb.append(", type=").append(type);
         sb.append(", database='").append(database).append('\'');
+        sb.append(", overwrite='").append(overwrite).append('\'');
         sb.append('}');
         return sb.toString();
     }

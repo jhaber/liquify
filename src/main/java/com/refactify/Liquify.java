@@ -1,12 +1,15 @@
 package com.refactify;
 
-import java.io.FileOutputStream;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 import com.refactify.arguments.ConversionArguments;
 import com.refactify.arguments.ConversionArgumentsParser;
@@ -21,7 +24,6 @@ import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.core.MySQLDatabase;
-import liquibase.exception.LiquibaseException;
 import liquibase.exception.MigrationFailedException;
 import liquibase.exception.SetupException;
 import liquibase.executor.Executor;
@@ -31,8 +33,6 @@ import liquibase.parser.ChangeLogParser;
 import liquibase.parser.ChangeLogParserFactory;
 import liquibase.resource.FileSystemResourceAccessor;
 import liquibase.resource.ResourceAccessor;
-import liquibase.serializer.ChangeLogSerializer;
-import liquibase.serializer.ChangeLogSerializerFactory;
 
 public class Liquify {
     private final static ConversionArgumentsParser parser = new ConversionArgumentsParser();
@@ -43,6 +43,11 @@ public class Liquify {
         ConversionArguments conversionArguments = parser.parseArguments(args);
         if(conversionArguments.areValid()) {
             String targetFileName = targetFileNameBuilder.buildFilename(conversionArguments);
+
+            if (!conversionArguments.getOverwrite() && new File(targetFileName).exists()) {
+                System.out.println("Target file " + targetFileName + " already exists, pass '--overwrite' to allow overwriting");
+                System.exit(1);
+            }
 
             try (Writer writer = new FileWriter(targetFileName)) {
                 Executor realExecutor = ExecutorService.getInstance().getExecutor(mysql());
@@ -68,11 +73,7 @@ public class Liquify {
         writer.write("--liquibase formatted sql\n\n");
 
         for (ChangeSet changeSet : changeLog.getChangeSets()) {
-            String author = changeSet.getAuthor()
-                    .replaceAll("\\s+", "_")
-                    .replace("_(generated)","");
-
-            writer.write("--changeset " + author + ":" + changeSet.getId() + "\n");
+            writer.write(changeSetDeclaration(changeSet));
             for (Change change : changeSet.getChanges()) {
                 try {
                     change.init();
@@ -87,31 +88,61 @@ public class Liquify {
         }
     }
 
-    private static void convertDatabaseChangeLog(final ConversionArguments conversionArguments) {
-        String targetFileName = targetFileNameBuilder.buildFilename(conversionArguments);
-        try {
-            ResourceAccessor resourceAccessor = new FileSystemResourceAccessor(System.getProperty("user.dir"));
-            ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(conversionArguments.getSource(), resourceAccessor);
-            DatabaseChangeLog changeLog = parser.parse(conversionArguments.getSource(), new ChangeLogParameters(), resourceAccessor);
-            ChangeLogSerializer serializer = ChangeLogSerializerFactory.getInstance().getSerializer(targetFileName);
-            for (ChangeSet set : changeLog.getChangeSets()) {
-                setFilePath(set, targetFileName);
-            }
-            serializer.write(changeLog.getChangeSets(), new FileOutputStream(targetFileName));
+    private static String changeSetDeclaration(ChangeSet changeSet) {
+        String author = changeSet.getAuthor()
+                .replaceAll("\\s+", "_")
+                .replace("_(generated)","");
+
+        List<String> parts = new ArrayList<>();
+        parts.add("--changeset");
+        parts.add(author + ":" + changeSet.getId());
+
+        if (changeSet.getContexts() != null && !changeSet.getContexts().isEmpty()) {
+            parts.add("context:" + join(changeSet.getContexts(), ","));
         }
-        catch (LiquibaseException e) {
-            System.out.println("There was a problem parsing the source file.");
-            deleteTargetFile(targetFileName);
+
+        if (changeSet.getDbmsSet() != null && !changeSet.getDbmsSet().isEmpty()) {
+            parts.add("dbms:" + join(changeSet.getDbmsSet(), ","));
         }
-        catch (IOException e) {
-            System.out.println("There was a problem serializing the source file.");
-            deleteTargetFile(targetFileName);
+
+        if (changeSet.isRunOnChange()) {
+            parts.add("runOnChange:true");
         }
-        catch(IllegalStateException e) {
-            System.out.println(String.format("Database generator for type '%s' was not found.",
-                    conversionArguments.getDatabase()));
-            deleteTargetFile(targetFileName);
+
+        if (changeSet.isAlwaysRun()) {
+            parts.add("runAlways:true");
         }
+
+        if (changeSet.getFailOnError() != null && !changeSet.getFailOnError()) {
+            parts.add("failOnError:false");
+        }
+
+        if (changeSet.getOnValidationFail() != ChangeSet.ValidationFailOption.HALT) {
+            parts.add("onValidationFail:" + changeSet.getOnValidationFail().name());
+        }
+
+        if (!changeSet.isRunInTransaction()) {
+            parts.add("runInTransaction:false");
+        }
+
+        return join(parts, " ") + "\n";
+    }
+
+    private static String join(Collection<String> strings, String separator) {
+        String joined = "";
+
+        Iterator<String> iterator = strings.iterator();
+        if (!iterator.hasNext()) {
+            return joined;
+        }
+        joined += iterator.next();
+
+        while (iterator.hasNext()) {
+            joined += separator;
+            joined += iterator.next();
+        }
+
+        return joined;
     }
 
     private static void deleteTargetFile(final String targetFileName) {
@@ -120,16 +151,6 @@ public class Liquify {
         }
         catch (IOException ioe) {
             ioe.printStackTrace();
-        }
-    }
-
-    private static void setFilePath(ChangeSet changeSet, String filePath) {
-        try {
-            Field f = ChangeSet.class.getDeclaredField("filePath");
-            f.setAccessible(true);
-            f.set(changeSet, filePath);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
