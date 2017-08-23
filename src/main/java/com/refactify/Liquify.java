@@ -102,10 +102,11 @@ public class Liquify {
         String author = changeSet.getAuthor()
                 .replaceAll("\\s+", "_")
                 .replace("_(generated)","");
+        String id = changeSet.getId().replaceAll("\\s+", "_");
 
         List<String> parts = new ArrayList<>();
         parts.add("--changeset");
-        parts.add(author + ":" + changeSet.getId());
+        parts.add(author + ":" + id);
 
         if (changeSet.getContexts() != null && !changeSet.getContexts().isEmpty()) {
             parts.add("context:" + join(changeSet.getContexts().getContexts(), ","));
