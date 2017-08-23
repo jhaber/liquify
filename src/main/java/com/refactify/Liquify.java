@@ -23,6 +23,7 @@ import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
+import liquibase.database.ObjectQuotingStrategy;
 import liquibase.database.core.MySQLDatabase;
 import liquibase.exception.MigrationFailedException;
 import liquibase.exception.SetupException;
@@ -70,13 +71,17 @@ public class Liquify {
         ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(conversionArguments.getSource(), resourceAccessor);
         DatabaseChangeLog changeLog = parser.parse(conversionArguments.getSource(), new ChangeLogParameters(), resourceAccessor);
 
-        writer.write("--liquibase formatted sql\n\n");
+        writer.write("--liquibase formatted sql");
+        if (!changeLog.getFilePath().equals(changeLog.getPhysicalFilePath())) {
+            writer.write(" logicalFilePath:" + changeLog.getLogicalFilePath());
+        }
+        writer.write("\n\n");
 
         for (ChangeSet changeSet : changeLog.getChangeSets()) {
             writer.write(changeSetDeclaration(changeSet));
             for (Change change : changeSet.getChanges()) {
                 try {
-                    change.init();
+                    change.finishInitialization();
                 } catch (SetupException se) {
                     throw new MigrationFailedException(changeSet, se);
                 }
@@ -98,7 +103,11 @@ public class Liquify {
         parts.add(author + ":" + changeSet.getId());
 
         if (changeSet.getContexts() != null && !changeSet.getContexts().isEmpty()) {
-            parts.add("context:" + join(changeSet.getContexts(), ","));
+            parts.add("context:" + join(changeSet.getContexts().getContexts(), ","));
+        }
+
+        if (changeSet.getLabels() != null && !changeSet.getLabels().isEmpty()) {
+            parts.add("labels:" + join(changeSet.getLabels().getLabels(), ","));
         }
 
         if (changeSet.getDbmsSet() != null && !changeSet.getDbmsSet().isEmpty()) {
@@ -123,6 +132,10 @@ public class Liquify {
 
         if (!changeSet.isRunInTransaction()) {
             parts.add("runInTransaction:false");
+        }
+
+        if (changeSet.getObjectQuotingStrategy() != ObjectQuotingStrategy.LEGACY) {
+            parts.add("objectQuotingStrategy:" + changeSet.getObjectQuotingStrategy().name());
         }
 
         return join(parts, " ") + "\n";
