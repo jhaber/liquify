@@ -45,7 +45,7 @@ public class Liquify {
             String targetFileName = targetFileNameBuilder.buildFilename(conversionArguments);
 
             if (!conversionArguments.getOverwrite() && new File(targetFileName).exists()) {
-                System.out.println("Target file " + targetFileName + " already exists, pass '--overwrite' to allow overwriting");
+                System.out.println("Target file " + targetFileName + " already exists, remove the existing file or pass '--overwrite' to allow overwriting");
                 System.exit(1);
             }
 
