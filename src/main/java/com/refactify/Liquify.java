@@ -71,11 +71,6 @@ public class Liquify {
         ChangeLogParser parser = ChangeLogParserFactory.getInstance().getParser(conversionArguments.getSource(), resourceAccessor);
         DatabaseChangeLog changeLog = parser.parse(conversionArguments.getSource(), new ChangeLogParameters(), resourceAccessor);
 
-        if (changeLog.getObjectQuotingStrategy() != null && changeLog.getObjectQuotingStrategy() != ObjectQuotingStrategy.LEGACY) {
-            System.out.println("XML changelog has a top-level quoting strategy set, this isn't supported by SQL changelog");
-            System.exit(1);
-        }
-
         writer.write("--liquibase formatted sql");
         if (!changeLog.getFilePath().equals(changeLog.getPhysicalFilePath())) {
             writer.write(" logicalFilePath:" + changeLog.getLogicalFilePath());
@@ -93,6 +88,7 @@ public class Liquify {
             }
 
             for (Change change : changeSet.getChanges()) {
+                mysql().setObjectQuotingStrategy(ObjectQuotingStrategy.QUOTE_ALL_OBJECTS);
                 mysql().executeStatements(change, changeLog, changeSet.getSqlVisitors());
             }
         }
@@ -138,10 +134,6 @@ public class Liquify {
 
         if (!changeSet.isRunInTransaction()) {
             parts.add("runInTransaction:false");
-        }
-
-        if (changeSet.getObjectQuotingStrategy() != null && changeSet.getObjectQuotingStrategy() != ObjectQuotingStrategy.LEGACY) {
-            parts.add("objectQuotingStrategy:" + changeSet.getObjectQuotingStrategy().name());
         }
 
         return join(parts, " ") + "\n";
