@@ -94,10 +94,12 @@ public class Liquify {
                 .replace("_(generated)","")
                 .replaceAll("\\W+", "_")
                 .replaceAll("_+", "_")
+                .replaceAll("^_", "")
                 .replaceAll("_$", "");
         String id = changeSet.getId()
                 .replaceAll("\\W+", "_")
                 .replaceAll("_+", "_")
+                .replaceAll("^_", "")
                 .replaceAll("_$", "");
 
         List<String> parts = new ArrayList<>();
