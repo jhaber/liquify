@@ -91,7 +91,10 @@ public class Liquify {
     private static String changeSetDeclaration(ChangeSet changeSet) {
         String author = changeSet.getAuthor()
                 .replaceAll("\\s+", "_")
-                .replace("_(generated)","");
+                .replace("_(generated)","")
+                .replaceAll("\\W+", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("_$", "");
         String id = changeSet.getId()
                 .replaceAll("\\W+", "_")
                 .replaceAll("_+", "_")
