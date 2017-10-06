@@ -39,7 +39,7 @@ def main():
         print 'Determined liquibase version to be {0}'.format(version)
 
         jar_name = 'liquify-{0}.jar'.format(version)
-        jar_url = 'https://github.com/jhaber/liquify/releases/download/0.4/{0}'.format(jar_name)
+        jar_url = 'https://github.com/jhaber/liquify/releases/download/0.5/{0}'.format(jar_name)
         local_jar_path = os.path.join('/tmp', jar_name)
 
         if (os.path.isfile(local_jar_path)):
