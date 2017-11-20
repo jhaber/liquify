@@ -62,6 +62,9 @@ public class SqlFormattingWriter extends Writer {
 
     StringBuilder formatted = new StringBuilder();
     int openParen = unformatted.indexOf('(');
+    if (openParen == -1) {
+      return unformatted;
+    }
     formatted.append(unformatted.substring(0, openParen + 1));
 
     int closeParen = unformatted.lastIndexOf(')');
