@@ -56,10 +56,9 @@ public class SqlFormattingWriter extends Writer {
   }
 
   private String formatSql(String unformatted) {
-    if (!unformatted.startsWith("CREATE TABLE")) {
+    if (!unformatted.startsWith("CREATE TABLE") || unformatted.contains(" LIKE ")) {
       return unformatted;
     }
-
     StringBuilder formatted = new StringBuilder();
     int openParen = unformatted.indexOf('(');
     formatted.append(unformatted.substring(0, openParen + 1));
